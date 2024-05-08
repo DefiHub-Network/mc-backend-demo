@@ -3,11 +3,17 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import Order from './order';
 import { verifySignature } from './webhook';
+import cors from 'cors'; // Import CORS module
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(
+  cors({
+    origin: '*',
+  }),
+);
 
 // Retrieve the necessary environment variables
 const DEFIHUB_SERVER_URL = process.env.DEFIHUB_SERVER_URL;
