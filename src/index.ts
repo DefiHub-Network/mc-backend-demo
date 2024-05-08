@@ -10,6 +10,7 @@ app.use(express.json());
 
 const DEFIHUB_SERVER_URL = process.env.DEFIHUB_SERVER_URL;
 const MERCHANT_API_KEY = process.env.MERCHANT_API_KEY;
+const MERCHANT_BOT_URL = process.env.MERCHANT_BOT_URL;
 
 if (!DEFIHUB_SERVER_URL || !MERCHANT_API_KEY) {
   throw new Error('Missing environment variables');
@@ -29,6 +30,8 @@ app.post('/subscribe', async (req: Request, res: Response) => {
         currencyCode: 'TON',
         timeout: 60 * 60, // 1 hour
         description: newOrder.description,
+        returnUrl: `${MERCHANT_BOT_URL}/success`,
+        failReturnUrl: `${MERCHANT_BOT_URL}/error`,
       },
       {
         headers: {
