@@ -17,6 +17,18 @@ function insert(data: any) {
   return newRow;
 }
 
+function update(data: any & { id: string }) {
+  const index = storage.findIndex(row => row.id === data.id);
+  if (index !== -1) {
+    storage[index] = {
+      ...storage[index],
+      ...data,
+    };
+    return storage[index];
+  }
+  return null;
+}
+
 function findOne(id: string) {
   return storage.find(row => row.id === id);
 }
@@ -29,4 +41,5 @@ export default {
   insert,
   findOne,
   findAll,
+  update,
 };

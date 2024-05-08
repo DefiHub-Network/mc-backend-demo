@@ -20,24 +20,21 @@ export interface Order {
   itemId: string;
   amount: string;
   description: string;
+  status: 'pending' | 'paid' | 'expired';
 }
 
 function getPackageInfo(packageId: number) {
   return PackageItem[packageId];
 }
 
-function createNewOrder(packageId: number): {
-  id: string;
-  packageId: string;
-  amount: string;
-  description: string;
-} {
+function createNewOrder(packageId: number): Order {
   const packageInfo = getPackageInfo(packageId);
 
   return DB.insert({
     packageId,
     amount: packageInfo.amount,
     description: packageInfo.description,
+    status: 'pending',
   });
 }
 
@@ -49,8 +46,13 @@ function getAll(): Order[] {
   return DB.findAll();
 }
 
+function updateOrder(order: Order): Order {
+  return DB.update(order);
+}
+
 export default {
   createNewOrder,
+  updateOrder,
   getById,
   getAll,
 };

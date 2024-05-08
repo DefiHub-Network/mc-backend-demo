@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import Order from './order';
+import { verifySignature } from './webhook';
 
 dotenv.config();
 
@@ -48,15 +49,34 @@ app.post('/subscribe', async (req: Request, res: Response) => {
   }
 });
 
+const ProcessedEvent: Record<string, boolean> = {};
 app.post('/webhook', (req: Request, res: Response) => {
-  const { externalId, status } = req.body;
+  const { eventId, externalId } = req.body;
 
-  // Process the webhook notification
-  console.log(`Received webhook for order ${externalId} with status ${status}`);
+  if (ProcessedEvent[eventId]) {
+    return res.status(200).json();
+  }
 
-  // Update the order status in your database
+  if (!verifySignature(req, MERCHANT_API_KEY)) {
+    return res.status(401).json();
+  }
 
-  res.sendStatus(200);
+  try {
+    const order = Order.getById(externalId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Update order status based on the webhook payload
+    order.status = 'paid';
+    Order.updateOrder(order);
+
+    ProcessedEvent[eventId] = true;
+    return res.status(200).json();
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    res.status(500).json({ error: 'Failed to process webhook' });
+  }
 });
 
 app.get('/order/list', (req: Request, res: Response) => {
