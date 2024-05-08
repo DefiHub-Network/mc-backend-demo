@@ -2,15 +2,15 @@ import DB from './db';
 
 export const PackageItem: Record<number, { amount: string; description: string }> = {
   1: {
-    amount: '0.1',
+    amount: '0.01',
     description: 'Subscription for 1 month',
   },
   2: {
-    amount: '0.2',
+    amount: '0.02',
     description: 'Subscription for 3 months',
   },
   3: {
-    amount: '0.3',
+    amount: '0.03',
     description: 'Subscription for 5 months',
   },
 };
