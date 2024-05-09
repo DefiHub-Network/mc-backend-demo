@@ -1,23 +1,26 @@
 import DB from './db';
 
-export const PackageItem: Record<number, { amount: string; description: string }> = {
+export const PackageItem: Record<number, { amount: string; description: string; months: number }> = {
   1: {
     amount: '0.01',
     description: 'Subscription for 1 month',
+    months: 1,
   },
   2: {
     amount: '0.02',
     description: 'Subscription for 3 months',
+    months: 3,
   },
   3: {
     amount: '0.03',
     description: 'Subscription for 5 months',
+    months: 5,
   },
 };
 
 export interface Order {
   id: string;
-  itemId: string;
+  packageId: number;
   amount: string;
   description: string;
   status: 'pending' | 'paid' | 'expired';
@@ -51,6 +54,7 @@ function updateOrder(order: Order): Order {
 }
 
 export default {
+  getPackageInfo,
   createNewOrder,
   updateOrder,
   getById,

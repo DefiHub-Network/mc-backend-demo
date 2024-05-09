@@ -61,6 +61,12 @@ app.post('/subscribe', async (req: Request, res: Response) => {
   }
 });
 
+let mySubscription = 0;
+app.get('/my-subscription', (req: Request, res: Response) => {
+  console.log('mySubscription', mySubscription);
+  res.json({ data: { totalMonths: mySubscription } });
+});
+
 // Object to keep track of processed webhook events
 const ProcessedEvent: Record<string, boolean> = {};
 
@@ -88,6 +94,8 @@ app.post('/webhook', (req: Request, res: Response) => {
     // Update the order status based on the webhook payload
     order.status = 'paid';
     Order.updateOrder(order);
+    // Payment success takes effect on user subscription
+    mySubscription += Order.getPackageInfo(order.packageId).months;
 
     // Mark the event as processed
     ProcessedEvent[eventId] = true;
