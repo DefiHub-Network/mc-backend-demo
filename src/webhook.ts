@@ -1,52 +1,51 @@
 import * as crypto from 'crypto';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 
 /**
- * Normalizes the request body by sorting the keys and converting it to a string.
- * This is necessary because objects in JavaScript are unordered key-value pairs (maps),
- * and the order of fields is not guaranteed. Normalizing the body ensures consistent
- * signature verification regardless of the field order.
- *
- * Note: In some programming languages like Go, the order of fields in a struct is
- * guaranteed, so normalizing the body might not be necessary. However, in JavaScript,
- * this step is crucial for accurate signature verification.
- *
- * @param obj The request body object
- * @returns The normalized request body as a string
+ * Creates a signing message by combining the timestamp and the stringified request body.
+ * @param body - The request body object.
+ * @param timestamp - The timestamp string.
+ * @returns The signing message string.
  */
-export function normalizeBody(obj: Record<string, any>): string {
-  const orderedKeys = Object.keys(obj).sort();
-  const orderedObj: any = {};
-  for (const key of orderedKeys) {
-    orderedObj[key] = obj[key];
-  }
-  return JSON.stringify(orderedObj);
+export function createSigningMessage(body: object, timestamp: string): string {
+  return `v0:${timestamp}:${JSON.stringify(body)}`;
 }
 
 /**
- * Verifies the signature of the webhook request to ensure its authenticity.
- * Merchants should use this function to validate incoming webhook requests.
- *
- * @param req The incoming webhook request
- * @param secretKey The merchant's secret key for signature verification
- * @returns True if the signature is valid, false otherwise
+ * Signs the given message using the provided secret key and returns the signature.
+ * @param message - The message to be signed.
+ * @param secretKey - The secret key used for signing.
+ * @returns The signature string.
+ */
+export function signSignature(message: string, secretKey: string): string {
+  const signature = crypto.createHmac('sha256', secretKey).update(message).digest('hex');
+  return signature;
+}
+
+/**
+ * Creates a signature by combining the signing message and the secret key.
+ * @param body - The request body object.
+ * @param timestamp - The timestamp string.
+ * @param secretKey - The secret key used for signing.
+ * @returns The signature string.
+ */
+export function createSignature(body: object, timestamp: string, secretKey: string): string {
+  const message = createSigningMessage(body, timestamp);
+  // v0:1715654020:{"eventId":"0c9a7e95-84b8-4090-aaff-a828eed69c56","type":"order.paid","payload":{"orderId":17,"status":"PAID","externalId":"89517dea-d882-44b9-ab9f-ecd04ab6bb9e","customData":"","currencyCode":"TON","paySUAmount":"10000000","feeSUAmount":"0","netSUAmount":"10000000","completedAt":"2024-05-13T15:16:40.000Z"}}
+  return `v0=${signSignature(message, secretKey)}`;
+}
+
+/**
+ * Verifies the signature of the incoming request by comparing it with the calculated signature.
+ * @param req - The incoming request object.
+ * @param secretKey - The secret key used for signature verification.
+ * @returns True if the signature is valid, false otherwise.
  */
 export function verifySignature(req: Request, secretKey: string): boolean {
-  // Get the received signature from the 'defihub-signature' header
-  const receivedSignature = req.headers['defihub-signature'] as string;
+  const receivedSignature = req.headers['x-defihub-signature'] as string;
+  const timestamp = req.headers['x-defihub-timestamp'] as string;
 
-  // Get the timestamp from the 'defihub-timestamp' header
-  const timestamp = req.headers['defihub-timestamp'] as string;
-
-  // Normalize the request body by combining the timestamp and request body
-  const payload = normalizeBody({
-    timestamp: timestamp,
-    ...req.body,
-  });
-
-  // Calculate the expected signature using the merchant's secret key
-  const calculatedSignature = crypto.createHmac('sha256', secretKey).update(payload).digest('hex');
-
-  // Compare the received signature with the calculated signature
+  const calculatedSignature = createSignature(req.body, timestamp, secretKey);
+  // v0=ea029e29987363ca54b41638baabd8d183d7679ca2856816493355f014d941b8
   return calculatedSignature === receivedSignature;
 }

@@ -72,7 +72,7 @@ const ProcessedEvent: Record<string, boolean> = {};
 
 // Endpoint for handling webhook events
 app.post('/webhook', (req: Request, res: Response) => {
-  const { eventId, externalId } = req.body;
+  const { eventId } = req.body;
 
   // Check if the event has already been processed
   if (ProcessedEvent[eventId]) {
@@ -84,6 +84,8 @@ app.post('/webhook', (req: Request, res: Response) => {
     return res.status(401).json();
   }
 
+  const { externalId } = req.body.payload;
+  // defaultly, we send only ORDER_PAID event unless you register for other kinds of event
   try {
     // Retrieve the order using the external ID
     const order = Order.getById(externalId);
@@ -91,7 +93,7 @@ app.post('/webhook', (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Update the order status based on the webhook payload
+    // assume default event setting, update the order status
     order.status = 'paid';
     Order.updateOrder(order);
     // Payment success takes effect on user subscription
